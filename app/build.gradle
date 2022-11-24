@@ -46,12 +46,9 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.5.0'
     implementation 'com.google.android.material:material:1.6.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    def version = "0.3.303"
-    implementation "com.tomtom.sdk:maps-display:$version"
-    implementation "com.tomtom.sdk:routing-client-online:$version"
-    implementation "com.tomtom.sdk:location-android:$version"
-    implementation "com.tomtom.sdk:location-simulation:$version"
-    implementation "com.tomtom.sdk:location-mapmatched:$version"
+    def version = "0.3.1056"
+    implementation "com.tomtom.sdk.maps:map-display:$version"
+    implementation "com.tomtom.sdk.routing:route-planner-online:$version"
     implementation 'com.github.ticofab:android-gpx-parser:2.2.0'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'

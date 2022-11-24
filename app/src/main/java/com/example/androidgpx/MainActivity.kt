@@ -1,25 +1,28 @@
 package com.example.androidgpx
 
-import android.os.*
-import android.widget.*
-import androidx.appcompat.app.*
-import com.tomtom.sdk.common.location.*
-import com.tomtom.sdk.common.route.Route
-import com.tomtom.sdk.maps.display.*
-import com.tomtom.sdk.maps.display.route.*
-import com.tomtom.sdk.maps.display.ui.*
-import com.tomtom.sdk.routing.api.*
-import com.tomtom.sdk.routing.common.*
+import android.os.Bundle
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import com.tomtom.sdk.common.location.GeoPoint
+import com.tomtom.sdk.common.vehicle.Vehicle
+import com.tomtom.sdk.map.display.MapOptions
+import com.tomtom.sdk.map.display.TomTomMap
+import com.tomtom.sdk.map.display.route.RouteOptions
+import com.tomtom.sdk.map.display.ui.MapFragment
+import com.tomtom.sdk.map.display.ui.OnMapReadyCallback
+import com.tomtom.sdk.route.Route
+import com.tomtom.sdk.routing.*
+import com.tomtom.sdk.routing.common.RoutingError
 import com.tomtom.sdk.routing.common.options.*
-import com.tomtom.sdk.routing.common.options.vehicle.*
-import com.tomtom.sdk.routing.online.*
-import io.ticofab.androidgpxparser.parser.*
-import io.ticofab.androidgpxparser.parser.domain.*
-import java.io.*
+import com.tomtom.sdk.routing.online.OnlineRoutePlanner
+import io.ticofab.androidgpxparser.parser.GPXParser
+import io.ticofab.androidgpxparser.parser.domain.Gpx
+import io.ticofab.androidgpxparser.parser.domain.Track
+import java.io.InputStream
 
 class MainActivity : AppCompatActivity() {
     private lateinit var tomTomMap: TomTomMap
-    private lateinit var routingApi: RoutingApi
+    private lateinit var routePlanner: RoutePlanner
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,7 +42,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initRouting() {
-        routingApi = OnlineRoutingApi.create(
+        routePlanner = OnlineRoutePlanner.create(
             context = this,
             apiKey = resources.getString(R.string.API_KEY)
         )
@@ -51,8 +54,8 @@ class MainActivity : AppCompatActivity() {
         val gpx: Gpx? = readGpx()
         if (gpx != null) {
             val track = gpx.tracks.elementAt(0)
-            val geoCoordinates = trackToGeoCoordinates(track)
-            reconstructRoute(geoCoordinates)
+            val geoPoints = trackToGeoPoints(track)
+            reconstructRoute(geoPoints)
         }
     }
 
@@ -70,17 +73,17 @@ class MainActivity : AppCompatActivity() {
         return parsedGpx
     }
 
-    private fun trackToGeoCoordinates(track: Track): List<GeoCoordinate> {
-        val geoCoordinates = mutableListOf<GeoCoordinate>()
+    private fun trackToGeoPoints(track: Track): List<GeoPoint> {
+        val geoPoints = mutableListOf<GeoPoint>()
         for (segment in track.trackSegments) {
             for (trackPoint in segment.trackPoints) {
-                geoCoordinates.add(GeoCoordinate(trackPoint.latitude, trackPoint.longitude))
+                geoPoints.add(GeoPoint(trackPoint.latitude, trackPoint.longitude))
             }
         }
-        return geoCoordinates
+        return geoPoints
     }
 
-    private fun reconstructRoute(coords: List<GeoCoordinate>) {
+    private fun reconstructRoute(coords: List<GeoPoint>) {
         val itinerary = Itinerary(
             origin = coords.first(),
             destination = coords.last(),
@@ -92,7 +95,7 @@ class MainActivity : AppCompatActivity() {
             vehicle = Vehicle.Car()
         )
 
-        routingApi.planRoute(planRouteOptions, routePlanningCallback)
+        routePlanner.planRoute(planRouteOptions, routePlanningCallback)
     }
 
     private val routePlanningCallback = object : RoutePlanningCallback {
@@ -104,6 +107,8 @@ class MainActivity : AppCompatActivity() {
         override fun onError(error: RoutingError) {
             Toast.makeText(this@MainActivity, error.message, Toast.LENGTH_SHORT).show()
         }
+
+        override fun onRoutePlanned(route: Route) = Unit
     }
 
     private fun drawRoute(route: Route) {
